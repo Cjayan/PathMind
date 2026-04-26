@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}产品列表 - 路径智慧库{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>我的产品</h1>
+    <button class="btn btn-primary" onclick="showCreateModal()">+ 新建产品</button>
+</div>
+
+<div id="product-list" class="card-grid">
+    <!-- Products loaded by JS -->
+</div>
+
+<div id="empty-state" class="empty-state" style="display: none;">
+    <h3>还没有产品记录</h3>
+    <p>点击"新建产品"开始记录你的产品使用体验</p>
+</div>
+
+<!-- Create Product Modal -->
+<div class="modal-overlay" id="create-modal">
+    <div class="modal">
+        <h2>新建产品</h2>
+        <div class="form-group">
+            <label class="form-label">产品名称 *</label>
+            <input type="text" class="form-input" id="product-name" placeholder="例如: 微信, 淘宝, Notion..." autofocus>
+        </div>
+        <div class="form-group">
+            <label class="form-label">产品描述 (可选)</label>
+            <textarea class="form-textarea" id="product-desc" placeholder="简短描述这个产品..." rows="3"></textarea>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="hideCreateModal()">取消</button>
+            <button class="btn btn-primary" onclick="createProduct()">创建</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/product.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} - 路径智慧库{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/flow_list.css') }}">
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="nav-separator">/</span>
+<a href="/product/{{ product.id }}" class="nav-crumb active">{{ product.name }}</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{{ product.name }}</h1>
+        {% if product.description %}
+        <p class="text-secondary mt-8">{{ product.description }}</p>
+        {% endif %}
+    </div>
+    <div class="flex gap-8">
+        <button class="btn btn-secondary" onclick="exportProduct({{ product.id }})">导出全部到 Obsidian</button>
+        <button class="btn btn-primary" onclick="showCreateFlowModal()">+ 新建流程</button>
+    </div>
+</div>
+
+<div id="flow-list">
+    <!-- Flows loaded by JS -->
+</div>
+
+<div id="empty-state" class="empty-state" style="display: none;">
+    <h3>还没有流程记录</h3>
+    <p>点击"新建流程"开始记录操作步骤</p>
+</div>
+
+<!-- Create Flow Modal -->
+<div class="modal-overlay" id="create-flow-modal">
+    <div class="modal">
+        <h2>新建流程</h2>
+        <div class="form-group">
+            <label class="form-label">流程名称 *</label>
+            <input type="text" class="form-input" id="flow-name" placeholder="例如: 注册流程, 购买流程, 搜索功能..." autofocus>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="hideCreateFlowModal()">取消</button>
+            <button class="btn btn-primary" onclick="createFlow()">创建并开始录制</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script src="{{ url_for('static', filename='js/flow_list.js') }}"></script>
+<script>
+const PRODUCT_ID = {{ product.id }};
+
+document.addEventListener('DOMContentLoaded', () => {
+    initFlowList('flow-list', loadFlows);
+    loadFlows();
+});
+
+async function loadFlows() {
+    try {
+        const flows = await apiCall(`/api/flows/?product_id=${PRODUCT_ID}`);
+        const empty = document.getElementById('empty-state');
+        if (flows.length === 0) {
+            document.getElementById('flow-list').innerHTML = '';
+            empty.style.display = 'block';
+        } else {
+            empty.style.display = 'none';
+            renderFlowCards(flows, 'flow-list');
+        }
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+function showCreateFlowModal() {
+    document.getElementById('create-flow-modal').classList.add('active');
+    document.getElementById('flow-name').focus();
+}
+
+function hideCreateFlowModal() {
+    document.getElementById('create-flow-modal').classList.remove('active');
+    document.getElementById('flow-name').value = '';
+}
+
+async function createFlow() {
+    const name = document.getElementById('flow-name').value.trim();
+    if (!name) {
+        showToast('请输入流程名称', 'error');
+        return;
+    }
+
+    try {
+        const flow = await apiCall('/api/flows/', {
+            method: 'POST',
+            body: { product_id: PRODUCT_ID, name },
+        });
+        showToast('流程创建成功', 'success');
+        window.location.href = `/flow/${flow.id}/record`;
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+async function deleteFlow(id, name) {
+    const confirmed = await showConfirm('删除流程', `确定要删除流程"${name}"吗？所有步骤和截图都将被删除。`);
+    if (!confirmed) return;
+
+    try {
+        await apiCall(`/api/flows/${id}`, { method: 'DELETE' });
+        showToast('流程已删除', 'success');
+        loadFlows();
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+async function exportFlow(flowId) {
+    try {
+        const result = await apiCall(`/api/export/flow/${flowId}`, { method: 'POST' });
+        showToast(result.message, 'success');
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+async function exportProduct(productId) {
+    try {
+        const result = await apiCall(`/api/export/product/${productId}`, { method: 'POST' });
+        showToast(result.message, 'success');
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+document.getElementById('flow-name')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') createFlow();
+});
+
+document.getElementById('create-flow-modal')?.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal-overlay')) hideCreateFlowModal();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,184 @@
+/* flow_list.css - Flow card list with drag, pin, mark */
+
+.flow-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    position: relative;
+}
+
+.flow-card:hover {
+    border-color: var(--color-primary);
+}
+
+.flow-card.pinned {
+    border-top: 2px solid var(--color-star);
+    background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, var(--color-bg-card) 40px);
+}
+
+.flow-card-ghost {
+    opacity: 0.4;
+    border: 2px dashed var(--color-primary);
+}
+
+/* Drag handle */
+.flow-drag-handle {
+    cursor: grab;
+    font-size: 14px;
+    color: var(--color-text-muted);
+    user-select: none;
+    letter-spacing: 2px;
+    flex-shrink: 0;
+    padding: 4px 2px;
+}
+.flow-drag-handle:hover {
+    color: var(--color-text);
+}
+.flow-drag-handle:active {
+    cursor: grabbing;
+}
+
+/* Pin */
+.flow-card-pin {
+    cursor: pointer;
+    font-size: 14px;
+    flex-shrink: 0;
+    opacity: 0.9;
+}
+.flow-card-pin:hover {
+    transform: scale(1.15);
+}
+.flow-card-pin .pin-inactive {
+    opacity: 0.25;
+    filter: grayscale(1);
+}
+
+/* Mark dot */
+.flow-mark-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: transform 0.15s;
+    position: relative;
+}
+.flow-mark-dot:hover {
+    transform: scale(1.4);
+}
+.flow-mark-empty {
+    border: 2px dashed var(--color-text-muted);
+    background: transparent !important;
+    width: 10px;
+    height: 10px;
+}
+
+/* Mark picker popup */
+.mark-picker-popup {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 200;
+    display: flex;
+    gap: 6px;
+    padding: 8px 10px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.mark-picker-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.mark-picker-dot:hover {
+    transform: scale(1.3);
+}
+.mark-picker-clear {
+    background: var(--color-bg-input) !important;
+    border: 1px solid var(--color-text-muted);
+    color: var(--color-text-muted);
+    font-size: 12px;
+    line-height: 1;
+}
+
+/* Card body */
+.flow-card-body {
+    flex: 1;
+    min-width: 0;
+}
+.flow-card-title {
+    font-size: 15px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.flow-card-title strong {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.flow-card-product {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    background: var(--color-bg-input);
+    padding: 1px 6px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+.flow-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+}
+
+/* Card actions */
+.flow-card-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+/* Filter bar */
+.flow-filter-bar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+.flow-filter-bar select {
+    background: var(--color-bg-input);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .flow-card {
+        flex-wrap: wrap;
+    }
+    .flow-card-actions {
+        width: 100%;
+        margin-top: 8px;
+        justify-content: flex-end;
+    }
+}

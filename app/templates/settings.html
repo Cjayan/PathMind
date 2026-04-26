@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}设置 - 路径智慧库{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>设置</h1>
+</div>
+
+<div class="card mb-16">
+    <h2 class="mb-16">Obsidian 知识库设置</h2>
+
+    <div class="form-group">
+        <label class="form-label">Vault 路径</label>
+        <div class="flex gap-8">
+            <input type="text" class="form-input" id="vault-path" placeholder="例如: D:\MyObsidianVault">
+            <button class="btn btn-secondary" onclick="validateVault()" style="white-space: nowrap;">验证路径</button>
+        </div>
+        <span class="text-small text-muted mt-8" id="vault-status" style="display: block; margin-top: 4px;"></span>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">产品文件夹名称</label>
+        <input type="text" class="form-input" id="products-folder" placeholder="Products" value="Products">
+        <span class="text-small text-muted">在 Vault 根目录下的文件夹名称</span>
+    </div>
+</div>
+
+<div class="card mb-16">
+    <h2 class="mb-16">AI 设置</h2>
+
+    <div class="form-group">
+        <label class="form-label">API Base URL</label>
+        <input type="text" class="form-input" id="ai-base-url" placeholder="https://api.openai.com/v1">
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">API Key</label>
+        <div class="flex gap-8">
+            <input type="password" class="form-input" id="ai-api-key" placeholder="sk-...">
+            <button class="btn btn-secondary" onclick="toggleApiKeyVisibility()" style="white-space: nowrap;" id="btn-toggle-key">显示</button>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">模型</label>
+        <input type="text" class="form-input" id="ai-model" placeholder="gpt-4o">
+        <span class="text-small text-muted">需要支持 Vision（图片分析）能力的模型</span>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Max Tokens</label>
+        <input type="number" class="form-input" id="ai-max-tokens" placeholder="4096" value="4096">
+    </div>
+
+    <div style="margin-top: 12px;">
+        <button class="btn btn-secondary" onclick="testAiConnection()">测试 AI 连接</button>
+        <span id="ai-test-result" class="text-small" style="margin-left: 12px;"></span>
+    </div>
+</div>
+
+<div class="card mb-16">
+    <h2 class="mb-16">自动录制设置</h2>
+    <p class="text-small text-muted mb-16">配置悬浮窗自动录制功能的全局快捷键和截图工具。两个快捷键都配置后才能启用自动录制。</p>
+
+    <div class="form-group">
+        <label class="form-label">开始录制热键</label>
+        <input type="text" class="form-input" id="recording-hotkey-start" placeholder="例如: f9, ctrl+shift+r">
+        <span class="text-small text-muted">留空表示禁用，支持格式: f9, ctrl+shift+r, alt+f1 等</span>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">停止录制热键</label>
+        <input type="text" class="form-input" id="recording-hotkey-stop" placeholder="例如: f10, ctrl+shift+s">
+        <span class="text-small text-muted">留空表示禁用，建议与开始热键不同</span>
+    </div>
+
+    {% if platform == 'win32' %}
+    <div class="form-group">
+        <label class="form-label">Snipaste 路径（可选）</label>
+        <div class="flex gap-8">
+            <input type="text" class="form-input" id="recording-snipaste-path" placeholder="例如: C:\Program Files\Snipaste\Snipaste.exe">
+            <button class="btn btn-secondary" onclick="validateSnipaste()" style="white-space: nowrap;">验证路径</button>
+        </div>
+        <span class="text-small text-muted mt-8" id="snipaste-status" style="display: block; margin-top: 4px;"></span>
+        <span class="text-small text-muted">留空则使用内置截图（PIL），配置 Snipaste 可获得更高质量截图</span>
+    </div>
+    {% else %}
+    <div class="form-group">
+        <label class="form-label">截图工具</label>
+        <span class="text-small" style="color: var(--color-success); display: block; margin-top: 4px;">screencapture（macOS 内置）</span>
+    </div>
+    {% endif %}
+</div>
+
+<div class="flex gap-8" style="margin-top: 24px;">
+    <button class="btn btn-primary btn-lg" onclick="saveSettings()">保存设置</button>
+</div>
+
+<!-- Data Management Section -->
+<div style="margin-top: 40px;">
+    <div class="page-header">
+        <h1>数据管理</h1>
+    </div>
+
+    <div class="card mb-16">
+        <h2 class="mb-16">数据导出</h2>
+        <p class="text-secondary text-small mb-16">导出为 ZIP 文件（包含 JSON 数据 + 图片），可在另一台电脑导入。</p>
+        <div class="flex gap-8">
+            <button class="btn btn-primary" onclick="exportFull()">全量导出</button>
+            <button class="btn btn-secondary" onclick="exportIncremental()">增量导出</button>
+        </div>
+    </div>
+
+    <div class="card mb-16">
+        <h2 class="mb-16">数据导入</h2>
+        <p class="text-secondary text-small mb-16">上传从其他实例导出的 ZIP 文件，智能识别新增和更新的数据。</p>
+        <input type="file" id="import-file-input" accept=".zip" style="display: none;" onchange="onImportFileSelected(this)">
+        <button class="btn btn-primary" onclick="triggerImportUpload()">选择 ZIP 文件导入</button>
+        <div id="import-preview" class="import-preview-box" style="display: none;"></div>
+    </div>
+
+    <div class="card mb-16">
+        <h2 class="mb-16">备份管理</h2>
+        <p class="text-secondary text-small mb-16">自动保留最近 3 天的备份。导入操作前会自动创建备份。</p>
+        <button class="btn btn-secondary mb-16" onclick="createManualBackup()">手动创建备份</button>
+        <div id="backup-list"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+<script src="{{ url_for('static', filename='js/data_sync.js') }}"></script>
+{% endblock %}

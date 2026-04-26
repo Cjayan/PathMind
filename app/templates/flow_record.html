@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}{{ '编辑' if flow.status == 'completed' else '录制' }}: {{ flow.name }} - 路径智慧库{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/flow_record.css') }}">
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="nav-separator">/</span>
+<a href="/product/{{ flow.product.id }}" class="nav-crumb">{{ flow.product.name }}</a>
+<span class="nav-separator">/</span>
+<span class="nav-crumb active">{{ flow.name }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="record-layout">
+    <!-- Left: Step List -->
+    <div class="step-list-panel">
+        <div class="step-list-header">
+            <h3>步骤列表</h3>
+            <span class="text-muted text-small" id="step-count">0 步</span>
+        </div>
+        <div class="step-list-body" id="step-list">
+            <!-- Steps rendered by JS -->
+        </div>
+        <div class="step-list-footer">
+            <button class="btn btn-primary" style="width: 100%;" onclick="addNewStep()">+ 添加新步骤</button>
+        </div>
+    </div>
+
+    <!-- Right: Editor -->
+    <div class="editor-panel" id="editor-panel">
+        <div class="editor-empty" id="editor-empty">
+            <div class="icon">📸</div>
+            <h3>开始录制</h3>
+            <p class="mt-8 text-secondary">点击左下方"添加新步骤"开始记录操作流程</p>
+        </div>
+
+        <div id="editor-form" style="display: none;">
+            <div class="editor-title">
+                <span id="editor-step-title">新步骤</span>
+                <div class="flex gap-8">
+                    <button class="btn btn-sm btn-secondary" onclick="requestAiAnalysis()" id="btn-ai-analyze">AI 分析</button>
+                    <button class="btn btn-sm btn-secondary" onclick="showFloatingWindowTip()" title="悬浮窗自动录制模式">悬浮窗</button>
+                </div>
+            </div>
+
+            <!-- Image Upload -->
+            <div id="upload-area-container">
+                <div class="upload-area" id="upload-area">
+                    <div class="upload-icon">📷</div>
+                    <div class="upload-text">拖拽图片到这里上传</div>
+                    <div class="upload-hint">或者 Ctrl+V 粘贴截图 / 点击选择文件</div>
+                    <input type="file" id="file-input" accept="image/*">
+                </div>
+            </div>
+
+            <div id="image-preview-container" class="image-preview-container" style="display: none;">
+                <img id="image-preview" src="" alt="截图预览">
+                <div class="image-preview-actions">
+                    <button class="btn btn-sm btn-secondary" onclick="replaceImage()">更换图片</button>
+                    <button class="btn btn-sm btn-danger" onclick="removeImage()">移除</button>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="form-group">
+                <label class="form-label">步骤描述</label>
+                <input type="text" class="form-input" id="step-description" placeholder="描述这一步的操作...">
+            </div>
+
+            <!-- Score -->
+            <div class="form-group">
+                <label class="form-label">体验评分</label>
+                <div class="score-rating-input" id="score-rating">
+                    <button class="score-btn" data-score="1">1</button>
+                    <button class="score-btn" data-score="2">2</button>
+                    <button class="score-btn" data-score="3">3</button>
+                    <button class="score-btn" data-score="4">4</button>
+                    <button class="score-btn" data-score="5">5</button>
+                    <button class="score-btn" data-score="6">6</button>
+                    <button class="score-btn" data-score="7">7</button>
+                    <button class="score-btn" data-score="8">8</button>
+                    <button class="score-btn" data-score="9">9</button>
+                    <button class="score-btn" data-score="10">10</button>
+                </div>
+                <span class="text-muted text-small" id="score-label">未评分</span>
+            </div>
+
+            <!-- Notes -->
+            <div class="form-group">
+                <label class="form-label">备注</label>
+                <textarea class="form-textarea" id="step-notes" placeholder="记录体验感受、问题、建议..." rows="3"></textarea>
+            </div>
+
+            <!-- AI Comment Panel -->
+            <div class="ai-comment-panel" id="ai-comment-panel" style="display: none;">
+                <div class="ai-comment-panel-header">
+                    <label class="form-label" style="margin-bottom: 0;">AI 评论</label>
+                    <button class="btn btn-sm btn-primary" onclick="generateAiCommentFromRecord()" id="btn-gen-ai-comment">生成 AI 评论</button>
+                </div>
+                <div id="ai-comment-content">
+                    <p class="text-muted text-small">保存步骤后可生成 AI 评论</p>
+                </div>
+            </div>
+
+            <!-- AI Suggestion -->
+            <div class="ai-suggestion-box" id="ai-suggestion-box">
+                <h4>AI 分析建议</h4>
+                <div class="ai-suggestion-content" id="ai-suggestion-content"></div>
+                <div class="flex gap-8 mt-8">
+                    <button class="btn btn-sm btn-primary" onclick="adoptAiSuggestion()">采纳建议</button>
+                    <button class="btn btn-sm btn-secondary" onclick="dismissAiSuggestion()">忽略</button>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="editor-actions">
+                <button class="btn btn-danger btn-sm" onclick="deleteCurrentStep()" id="btn-delete-step" style="display: none;">删除此步骤</button>
+                <div class="flex gap-8">
+                    <button class="btn btn-secondary" onclick="cancelEdit()">取消</button>
+                    <button class="btn btn-primary" onclick="saveStep()" id="btn-save-step">保存步骤</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Bar -->
+<div class="status-bar">
+    <div class="flex gap-16">
+        <span class="status-item" id="status-steps">共 0 步</span>
+        <span class="status-item" id="status-avg-score">平均评分: -</span>
+        {% if flow.status == 'completed' %}
+        <span class="status-item"><span class="badge badge-completed">编辑中</span></span>
+        {% else %}
+        <span class="status-item"><span class="badge badge-recording">录制中</span></span>
+        {% endif %}
+    </div>
+    <div class="flex gap-8">
+        {% if flow.status == 'completed' %}
+        <button class="btn btn-sm btn-success" onclick="finishEditing()">保存修改</button>
+        {% else %}
+        <button class="btn btn-sm btn-success" onclick="completeRecording()">完成录制</button>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>const FLOW_STATUS = '{{ flow.status }}';</script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script src="{{ url_for('static', filename='js/image_upload.js') }}"></script>
+<script src="{{ url_for('static', filename='js/step_manager.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ai_assistant.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ai_comment.js') }}"></script>
+<script src="{{ url_for('static', filename='js/flow_record.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}AI总结: {{ flow.name }} - 路径智慧库{% endblock %}
+
+{% block breadcrumb %}
+<span class="nav-separator">/</span>
+<a href="/product/{{ flow.product.id }}" class="nav-crumb">{{ flow.product.name }}</a>
+<span class="nav-separator">/</span>
+<a href="/flow/{{ flow.id }}/view" class="nav-crumb">{{ flow.name }}</a>
+<span class="nav-separator">/</span>
+<span class="nav-crumb active">AI总结</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>{{ flow.name }} - AI 分析总结</h1>
+    <div class="flex gap-8">
+        <button class="btn btn-secondary" onclick="regenerateSummary()" id="btn-regenerate">重新生成</button>
+        <button class="btn btn-success" onclick="exportFlow({{ flow.id }})">导出到 Obsidian</button>
+    </div>
+</div>
+
+<div class="card" id="summary-container">
+    <div id="summary-content">
+        {% if flow.ai_summary %}
+        <div id="markdown-body"></div>
+        {% else %}
+        <div class="empty-state">
+            <h3>暂无AI总结</h3>
+            <p>点击"重新生成"来生成AI分析总结</p>
+        </div>
+        {% endif %}
+    </div>
+    <div id="summary-loading" style="display: none; text-align: center; padding: 40px;">
+        <div class="spinner"></div>
+        <p class="text-secondary mt-16">正在生成AI总结，请稍候...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+const FLOW_ID = {{ flow.id }};
+const INITIAL_SUMMARY = {{ flow.ai_summary | tojson if flow.ai_summary else 'null' }};
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (INITIAL_SUMMARY) {
+        renderMarkdown(INITIAL_SUMMARY);
+    }
+});
+
+function renderMarkdown(md) {
+    const body = document.getElementById('markdown-body');
+    if (!body) {
+        document.getElementById('summary-content').innerHTML = '<div id="markdown-body"></div>';
+    }
+    document.getElementById('markdown-body').innerHTML = marked.parse(md);
+
+    // Style the rendered markdown
+    const el = document.getElementById('markdown-body');
+    el.style.lineHeight = '1.8';
+    el.style.fontSize = '15px';
+
+    // Style tables
+    el.querySelectorAll('table').forEach(t => {
+        t.classList.add('table');
+        t.style.marginTop = '12px';
+    });
+}
+
+async function regenerateSummary() {
+    const btn = document.getElementById('btn-regenerate');
+    btn.disabled = true;
+    btn.textContent = '生成中...';
+
+    document.getElementById('summary-content').style.display = 'none';
+    document.getElementById('summary-loading').style.display = 'block';
+
+    try {
+        const result = await apiCall(`/api/ai/generate-summary/${FLOW_ID}`, { method: 'POST' });
+        document.getElementById('summary-content').style.display = 'block';
+        document.getElementById('summary-loading').style.display = 'none';
+
+        document.getElementById('summary-content').innerHTML = '<div id="markdown-body"></div>';
+        renderMarkdown(result.summary);
+        showToast('AI总结已重新生成', 'success');
+    } catch (error) {
+        document.getElementById('summary-content').style.display = 'block';
+        document.getElementById('summary-loading').style.display = 'none';
+        showToast(error.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '重新生成';
+    }
+}
+
+async function exportFlow(flowId) {
+    try {
+        const result = await apiCall(`/api/export/flow/${flowId}`, { method: 'POST' });
+        showToast(result.message, 'success');
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+</script>
+<style>
+    #markdown-body h1, #markdown-body h2, #markdown-body h3 {
+        margin-top: 20px;
+        margin-bottom: 8px;
+    }
+    #markdown-body h1 { font-size: 22px; }
+    #markdown-body h2 { font-size: 18px; border-bottom: 1px solid var(--color-border); padding-bottom: 6px; }
+    #markdown-body h3 { font-size: 16px; }
+    #markdown-body p { margin: 8px 0; }
+    #markdown-body ul, #markdown-body ol { margin: 8px 0; padding-left: 24px; }
+    #markdown-body li { margin: 4px 0; }
+    #markdown-body strong { color: var(--color-text); }
+    #markdown-body blockquote {
+        border-left: 3px solid var(--color-primary);
+        padding-left: 12px;
+        color: var(--color-text-secondary);
+        margin: 12px 0;
+    }
+    #markdown-body code {
+        background: var(--color-bg-input);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,551 @@
+{% extends "base.html" %}
+
+{% block title %}查看: {{ flow.name }} - 路径智慧库{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/flow_view.css') }}">
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="nav-separator">/</span>
+<a href="/product/{{ flow.product.id }}" class="nav-crumb">{{ flow.product.name }}</a>
+<span class="nav-separator">/</span>
+<span class="nav-crumb active">{{ flow.name }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{{ flow.name }}</h1>
+        <p class="text-secondary mt-8">
+            <span class="badge badge-{{ flow.status }}">{{ '录制中' if flow.status == 'recording' else '已完成' }}</span>
+        </p>
+    </div>
+    <div class="flex gap-8">
+        {% if flow.status == 'recording' %}
+        <a href="/flow/{{ flow.id }}/record" class="btn btn-primary">继续录制</a>
+        {% else %}
+        <a href="/flow/{{ flow.id }}/record" class="btn btn-secondary">编辑流程</a>
+        {% endif %}
+        {% if flow.ai_summary %}
+        <a href="/flow/{{ flow.id }}/summary" class="btn btn-secondary">查看AI总结</a>
+        {% else %}
+        <a href="/flow/{{ flow.id }}/summary" class="btn btn-primary">生成AI总结</a>
+        {% endif %}
+        <button class="btn btn-success" onclick="exportFlow({{ flow.id }})">导出到 Obsidian</button>
+    </div>
+</div>
+
+<div id="steps-view">
+    <!-- Steps loaded by JS -->
+</div>
+
+<!-- Image full-size modal -->
+<div class="image-modal-overlay" id="imageModal" onclick="closeImageModal(event)">
+    <div class="image-modal-content">
+        <img id="modalImage" src="" alt="full size">
+        <div class="image-modal-close" onclick="closeImageModal(event, true)">&times;</div>
+    </div>
+</div>
+
+<!-- Crop modal -->
+<div class="crop-modal-overlay" id="cropModal">
+    <div class="crop-modal-content">
+        <div class="crop-modal-header">
+            <h3>裁剪缩略图</h3>
+            <div class="flex gap-8">
+                <button class="btn btn-secondary btn-sm" onclick="closeCropModal()">取消</button>
+                <button class="btn btn-primary btn-sm" onclick="applyCrop()">应用裁剪</button>
+            </div>
+        </div>
+        <div class="crop-area" id="cropArea">
+            <img id="cropImage" src="" alt="crop">
+            <div class="crop-selection" id="cropSelection"></div>
+        </div>
+        <p class="text-muted text-small" style="margin-top: 8px; text-align: center;">拖拽选择裁剪区域，裁剪仅影响缩略图显示</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/ai_comment.js') }}"></script>
+<script>
+const FLOW_ID = {{ flow.id }};
+
+// Store crop data per step and steps data for inline editing
+const cropData = {};
+let stepsData = [];
+let currentCropStepId = null;
+let cropStartX = 0, cropStartY = 0;
+let isDraggingCrop = false;
+
+document.addEventListener('DOMContentLoaded', loadFlowData);
+
+async function loadFlowData() {
+    try {
+        const flow = await apiCall(`/api/flows/${FLOW_ID}`);
+        stepsData = flow.steps;
+        renderStepsView(stepsData);
+        // Handle hash scroll from search
+        handleHashScroll();
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+function getStepById(id) {
+    return stepsData.find(s => s.id === id);
+}
+
+function renderStepsView(steps) {
+    const container = document.getElementById('steps-view');
+    if (steps.length === 0) {
+        container.innerHTML = '<div class="empty-state"><h3>该流程没有步骤</h3></div>';
+        return;
+    }
+
+    container.innerHTML = steps.map(step => `
+        <div class="step-card" data-step-id="${step.id}" id="step-${step.id}">
+            <div class="step-header">
+                <span class="step-order-badge">${step.order}</span>
+                <h3 class="step-title editable" data-field="description" data-step-id="${step.id}">${escapeHtml(step.description || '(无描述)')}</h3>
+                <span class="step-stars editable-score" data-step-id="${step.id}" data-score="${step.score || 0}">${renderStars(step.score)}</span>
+            </div>
+            <div class="step-body">
+                ${step.image_path ? `
+                <div class="step-image-col">
+                    <div class="step-image-wrapper" onclick="openImageModal('/api/steps/image/${step.image_path}')">
+                        <img src="/api/steps/image/${step.image_path}"
+                             class="step-thumbnail"
+                             id="thumb-${step.id}"
+                             alt="步骤 ${step.order}">
+                        <div class="image-zoom-hint">
+                            <span>&#128269; 点击查看原图</span>
+                        </div>
+                    </div>
+                    <div class="image-action-row">
+                        <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); openCropModal(${step.id}, '/api/steps/image/${step.image_path}')">
+                            &#9986; 裁剪
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); replaceImage(${step.id})">
+                            &#128247; 替换图片
+                        </button>
+                    </div>
+                </div>
+                ` : `
+                <div class="step-image-col step-no-image">
+                    <div class="no-image-placeholder" onclick="replaceImage(${step.id})" style="cursor:pointer">
+                        &#128247; 点击上传截图
+                    </div>
+                </div>
+                `}
+                <div class="step-text-col">
+                    <div class="step-text-section">
+                        <label class="step-text-label">操作描述</label>
+                        <p class="step-description editable" data-field="description" data-step-id="${step.id}">${escapeHtml(step.description || '(无描述)')}</p>
+                    </div>
+                    <div class="step-text-section">
+                        <label class="step-text-label">备注</label>
+                        ${step.notes
+                            ? `<p class="step-notes editable" data-field="notes" data-step-id="${step.id}">${escapeHtml(step.notes)}</p>`
+                            : `<p class="step-notes editable editable-empty" data-field="notes" data-step-id="${step.id}">点击添加备注</p>`
+                        }
+                    </div>
+                    <div class="step-text-section">
+                        <label class="step-text-label">体验评分</label>
+                        <div class="step-score editable-score" data-step-id="${step.id}" data-score="${step.score || 0}">${renderStars(step.score)}</div>
+                    </div>
+                    <div class="step-text-section solution-section" data-step-id="${step.id}">
+                        ${step.solution
+                            ? `<label class="step-text-label">解决方案</label>
+                               <p class="step-solution editable" data-field="solution" data-step-id="${step.id}">${escapeHtml(step.solution)}</p>`
+                            : `<button class="solution-add-btn" onclick="addSolution(${step.id})">+ 添加解决方案</button>`
+                        }
+                    </div>
+                    <div class="step-text-section">
+                        ${renderAiCommentSection(step)}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+/* ---- Inline Editing (Event Delegation) ---- */
+document.getElementById('steps-view').addEventListener('click', function(e) {
+    const editable = e.target.closest('.editable');
+    if (editable && !editable.classList.contains('editing')) {
+        e.stopPropagation();
+        enableInlineEdit(editable);
+        return;
+    }
+    const scoreEl = e.target.closest('.editable-score');
+    if (scoreEl && !scoreEl.classList.contains('editing')) {
+        e.stopPropagation();
+        enableScoreEdit(scoreEl);
+        return;
+    }
+    const aiEl = e.target.closest('.editable-ai');
+    if (aiEl && !aiEl.classList.contains('editing')) {
+        e.stopPropagation();
+        enableAiFieldEdit(aiEl);
+    }
+});
+
+function enableInlineEdit(el) {
+    const field = el.dataset.field;
+    const stepId = parseInt(el.dataset.stepId);
+    const step = getStepById(stepId);
+    const originalValue = step ? (step[field] || '') : '';
+
+    el.classList.add('editing');
+
+    const isMultiline = (field === 'notes' || field === 'solution');
+    const tag = isMultiline ? 'textarea' : 'input';
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'inline-edit-wrapper';
+
+    const input = document.createElement(tag);
+    input.className = isMultiline ? 'form-textarea' : 'form-input';
+    input.value = originalValue;
+    if (isMultiline) input.rows = 3;
+
+    const actions = document.createElement('div');
+    actions.className = 'inline-edit-actions';
+    actions.innerHTML = `
+        <button class="btn btn-primary btn-sm inline-save-btn">保存</button>
+        <button class="btn btn-secondary btn-sm inline-cancel-btn">取消</button>
+    `;
+
+    wrapper.appendChild(input);
+    wrapper.appendChild(actions);
+
+    // Hide original content, show editor
+    el.style.display = 'none';
+    el.parentNode.insertBefore(wrapper, el.nextSibling);
+    input.focus();
+
+    // Save
+    actions.querySelector('.inline-save-btn').onclick = async () => {
+        const newValue = input.value.trim();
+        try {
+            await apiCall(`/api/steps/${stepId}`, {
+                method: 'PUT',
+                body: { [field]: newValue || '' }
+            });
+            // Update local data
+            const step = getStepById(stepId);
+            if (step) step[field] = newValue || null;
+            wrapper.remove();
+            el.classList.remove('editing');
+            el.style.display = '';
+            // Re-render this step's content
+            renderStepsView(stepsData);
+            showToast('已保存', 'success');
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    };
+
+    // Cancel
+    actions.querySelector('.inline-cancel-btn').onclick = () => {
+        wrapper.remove();
+        el.classList.remove('editing');
+        el.style.display = '';
+    };
+
+    // ESC to cancel
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            wrapper.remove();
+            el.classList.remove('editing');
+            el.style.display = '';
+        }
+    });
+}
+
+function enableScoreEdit(el) {
+    const stepId = parseInt(el.dataset.stepId);
+    const currentScore = parseInt(el.dataset.score) || 0;
+    el.classList.add('editing');
+
+    let html = '<div class="score-edit-row">';
+    for (let i = 1; i <= 10; i++) {
+        const level = i <= 3 ? 'low' : i <= 5 ? 'mid' : i <= 7 ? 'ok' : i <= 9 ? 'good' : 'great';
+        html += `<span class="score-edit-btn ${i <= currentScore ? 'active score-color-' + level : ''}" data-val="${i}">${i}</span>`;
+    }
+    html += '</div>';
+    el.innerHTML = html;
+
+    el.querySelectorAll('.score-edit-btn').forEach(btn => {
+        btn.onmouseenter = () => {
+            const val = parseInt(btn.dataset.val);
+            const level = val <= 3 ? 'low' : val <= 5 ? 'mid' : val <= 7 ? 'ok' : val <= 9 ? 'good' : 'great';
+            el.querySelectorAll('.score-edit-btn').forEach((s) => {
+                const sv = parseInt(s.dataset.val);
+                s.className = 'score-edit-btn' + (sv <= val ? ' active score-color-' + level : '');
+            });
+        };
+        btn.onmouseleave = () => {
+            const cs = currentScore;
+            const csLevel = cs <= 3 ? 'low' : cs <= 5 ? 'mid' : cs <= 7 ? 'ok' : cs <= 9 ? 'good' : 'great';
+            el.querySelectorAll('.score-edit-btn').forEach(s => {
+                const sv = parseInt(s.dataset.val);
+                s.className = 'score-edit-btn' + (sv <= cs ? ' active score-color-' + csLevel : '');
+            });
+        };
+        btn.onclick = async (e) => {
+            e.stopPropagation();
+            const newScore = parseInt(btn.dataset.val);
+            try {
+                await apiCall(`/api/steps/${stepId}`, {
+                    method: 'PUT',
+                    body: { score: newScore }
+                });
+                const step = getStepById(stepId);
+                if (step) step.score = newScore;
+                el.classList.remove('editing');
+                renderStepsView(stepsData);
+                showToast('评分已更新', 'success');
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        };
+    });
+}
+
+/* ---- Solution Field ---- */
+function addSolution(stepId) {
+    const section = document.querySelector(`.solution-section[data-step-id="${stepId}"]`);
+    if (!section) return;
+
+    section.innerHTML = `
+        <label class="step-text-label">解决方案</label>
+        <div class="inline-edit-wrapper">
+            <textarea class="form-textarea" rows="3" placeholder="输入解决方案..." id="solution-input-${stepId}"></textarea>
+            <div class="inline-edit-actions">
+                <button class="btn btn-primary btn-sm" onclick="saveSolution(${stepId})">保存</button>
+                <button class="btn btn-secondary btn-sm" onclick="cancelSolution(${stepId})">取消</button>
+            </div>
+        </div>
+    `;
+    document.getElementById(`solution-input-${stepId}`).focus();
+}
+
+async function saveSolution(stepId) {
+    const input = document.getElementById(`solution-input-${stepId}`);
+    const value = input ? input.value.trim() : '';
+    if (!value) {
+        showToast('请输入解决方案内容', 'error');
+        return;
+    }
+    try {
+        await apiCall(`/api/steps/${stepId}`, {
+            method: 'PUT',
+            body: { solution: value }
+        });
+        const step = getStepById(stepId);
+        if (step) step.solution = value;
+        renderStepsView(stepsData);
+        showToast('解决方案已保存', 'success');
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+}
+
+function cancelSolution(stepId) {
+    renderStepsView(stepsData);
+}
+
+/* ---- Image Replace ---- */
+function replaceImage(stepId) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async () => {
+        const file = input.files[0];
+        if (!file) return;
+        const formData = new FormData();
+        formData.append('image', file);
+        try {
+            const result = await apiCall(`/api/steps/${stepId}`, {
+                method: 'PUT',
+                body: formData,
+            });
+            // Update local data
+            const step = getStepById(stepId);
+            if (step) step.image_path = result.image_path;
+            renderStepsView(stepsData);
+            showToast('图片已替换', 'success');
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    };
+    input.click();
+}
+
+/* ---- Hash Scroll (from search) ---- */
+function handleHashScroll() {
+    const hash = window.location.hash;
+    if (!hash) return;
+    // Format: #step-{id}
+    const el = document.querySelector(hash);
+    if (el) {
+        setTimeout(() => {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.classList.add('step-highlight');
+            setTimeout(() => el.classList.remove('step-highlight'), 2000);
+        }, 200);
+    }
+}
+
+/* ---- Image Modal (full-size view) ---- */
+function openImageModal(src) {
+    const modal = document.getElementById('imageModal');
+    const img = document.getElementById('modalImage');
+    img.src = src;
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeImageModal(e, force) {
+    if (force || e.target === document.getElementById('imageModal')) {
+        const modal = document.getElementById('imageModal');
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeImageModal(null, true);
+        closeCropModal();
+    }
+});
+
+/* ---- Crop Modal ---- */
+function openCropModal(stepId, src) {
+    currentCropStepId = stepId;
+    const modal = document.getElementById('cropModal');
+    const img = document.getElementById('cropImage');
+    img.src = src;
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+
+    const sel = document.getElementById('cropSelection');
+    sel.style.display = 'none';
+
+    img.onload = function() {
+        initCropDrag();
+    };
+}
+
+function closeCropModal() {
+    const modal = document.getElementById('cropModal');
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+    currentCropStepId = null;
+}
+
+function initCropDrag() {
+    const area = document.getElementById('cropArea');
+    const sel = document.getElementById('cropSelection');
+    const img = document.getElementById('cropImage');
+
+    const newArea = area.cloneNode(true);
+    area.parentNode.replaceChild(newArea, area);
+
+    const newSel = newArea.querySelector('#cropSelection');
+    const newImg = newArea.querySelector('#cropImage');
+
+    newArea.addEventListener('mousedown', function(e) {
+        if (e.target === newSel) return;
+        const rect = newArea.getBoundingClientRect();
+        cropStartX = e.clientX - rect.left;
+        cropStartY = e.clientY - rect.top;
+        isDraggingCrop = true;
+        newSel.style.display = 'block';
+        newSel.style.left = cropStartX + 'px';
+        newSel.style.top = cropStartY + 'px';
+        newSel.style.width = '0px';
+        newSel.style.height = '0px';
+        e.preventDefault();
+    });
+
+    newArea.addEventListener('mousemove', function(e) {
+        if (!isDraggingCrop) return;
+        const rect = newArea.getBoundingClientRect();
+        const curX = Math.max(0, Math.min(e.clientX - rect.left, newImg.offsetWidth));
+        const curY = Math.max(0, Math.min(e.clientY - rect.top, newImg.offsetHeight));
+
+        const left = Math.min(cropStartX, curX);
+        const top = Math.min(cropStartY, curY);
+        const width = Math.abs(curX - cropStartX);
+        const height = Math.abs(curY - cropStartY);
+
+        newSel.style.left = left + 'px';
+        newSel.style.top = top + 'px';
+        newSel.style.width = width + 'px';
+        newSel.style.height = height + 'px';
+    });
+
+    newArea.addEventListener('mouseup', function() {
+        isDraggingCrop = false;
+    });
+}
+
+function applyCrop() {
+    const sel = document.querySelector('#cropArea #cropSelection');
+    const img = document.querySelector('#cropArea #cropImage');
+
+    if (!sel || sel.style.display === 'none' || parseInt(sel.style.width) < 10) {
+        showToast('请先拖拽选择裁剪区域', 'error');
+        return;
+    }
+
+    const selLeft = parseInt(sel.style.left);
+    const selTop = parseInt(sel.style.top);
+    const selWidth = parseInt(sel.style.width);
+    const selHeight = parseInt(sel.style.height);
+
+    const displayW = img.offsetWidth;
+    const displayH = img.offsetHeight;
+
+    const cropInfo = {
+        left: (selLeft / displayW) * 100,
+        top: (selTop / displayH) * 100,
+        width: (selWidth / displayW) * 100,
+        height: (selHeight / displayH) * 100
+    };
+
+    cropData[currentCropStepId] = cropInfo;
+
+    const thumb = document.getElementById('thumb-' + currentCropStepId);
+    if (thumb) {
+        thumb.style.objectFit = 'cover';
+        thumb.style.objectPosition = `${cropInfo.left}% ${cropInfo.top}%`;
+        thumb.style.clipPath = `inset(${cropInfo.top}% ${100 - cropInfo.left - cropInfo.width}% ${100 - cropInfo.top - cropInfo.height}% ${cropInfo.left}%)`;
+    }
+
+    closeCropModal();
+    showToast('裁剪已应用到缩略图', 'success');
+}
+
+/* ---- Export ---- */
+async function exportFlow(flowId) {
+    try {
+        const result = await apiCall(`/api/export/flow/${flowId}`, { method: 'POST' });
+        showToast(result.message, 'success');
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+{% endblock %}

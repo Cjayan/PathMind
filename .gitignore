@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Runtime data (generated at startup)
+data/app.db
+data/uploads/
+data/backups/
+data/temp/
+data/.migration_score10_done
+
+# User config (contains API keys)
+config.yaml
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+nul
+=*
+
+# Installer build artifacts & cache
+installer/build/
+installer/cache/
+installer/*.exe
+
+# Test files
+_test_*.py
+
+# Logs
+*.log
+
+# Qoder IDE
+.qoder/

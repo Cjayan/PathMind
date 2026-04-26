@@ -1,0 +1,20 @@
+obsidian:
+  vault_path: ""
+  products_folder: "Products"
+
+ai:
+  base_url: "https://api.openai.com/v1"
+  api_key: ""
+  model: "gpt-4o"
+  max_tokens: 4096
+  temperature: 0.7
+
+server:
+  host: "127.0.0.1"
+  port: 5000
+  debug: true
+
+recording:
+  hotkey_start: ""
+  hotkey_stop: ""
+  snipaste_path: ""

@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}全部流程 - 路径智慧库{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/flow_list.css') }}">
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="nav-separator">/</span>
+<span class="nav-crumb active">全部流程</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>全部流程</h1>
+</div>
+
+<div class="flow-filter-bar">
+    <select id="filter-product">
+        <option value="">全部产品</option>
+        {% for p in products %}
+        <option value="{{ p.id }}">{{ p.name }}</option>
+        {% endfor %}
+    </select>
+    <select id="filter-status">
+        <option value="">全部状态</option>
+        <option value="recording">录制中</option>
+        <option value="completed">已完成</option>
+    </select>
+    <select id="filter-mark">
+        <option value="">全部标记</option>
+        <option value="red">红色</option>
+        <option value="orange">橙色</option>
+        <option value="yellow">黄色</option>
+        <option value="green">绿色</option>
+        <option value="blue">蓝色</option>
+        <option value="purple">紫色</option>
+    </select>
+</div>
+
+<div id="flow-list">
+    <!-- Loaded by JS -->
+</div>
+
+<div id="empty-state" class="empty-state" style="display: none;">
+    <h3>没有找到流程</h3>
+    <p>尝试调整筛选条件</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script src="{{ url_for('static', filename='js/flow_list.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    initFlowList('flow-list', loadFlows);
+    loadFlows();
+
+    document.getElementById('filter-product').addEventListener('change', loadFlows);
+    document.getElementById('filter-status').addEventListener('change', loadFlows);
+    document.getElementById('filter-mark').addEventListener('change', loadFlows);
+});
+
+async function loadFlows() {
+    const params = new URLSearchParams();
+    const productId = document.getElementById('filter-product').value;
+    const status = document.getElementById('filter-status').value;
+    const mark = document.getElementById('filter-mark').value;
+    if (productId) params.set('product_id', productId);
+    if (status) params.set('status', status);
+    if (mark) params.set('mark_color', mark);
+
+    try {
+        const flows = await apiCall(`/api/flows/?${params.toString()}`);
+        const empty = document.getElementById('empty-state');
+        if (flows.length === 0) {
+            document.getElementById('flow-list').innerHTML = '';
+            empty.style.display = 'block';
+        } else {
+            empty.style.display = 'none';
+            renderFlowCards(flows, 'flow-list');
+        }
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+async function deleteFlow(id, name) {
+    const confirmed = await showConfirm('删除流程', `确定要删除流程"${name}"吗？所有步骤和截图都将被删除。`);
+    if (!confirmed) return;
+    try {
+        await apiCall(`/api/flows/${id}`, { method: 'DELETE' });
+        showToast('流程已删除', 'success');
+        loadFlows();
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+async function exportFlow(flowId) {
+    try {
+        const result = await apiCall(`/api/export/flow/${flowId}`, { method: 'POST' });
+        showToast(result.message, 'success');
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+</script>
+{% endblock %}
