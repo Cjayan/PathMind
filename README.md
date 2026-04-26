@@ -7,6 +7,10 @@ Automatically record product usage paths → AI-powered structured analysis → 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS-lightgrey.svg)]()
+[![Download](https://img.shields.io/github/v/release/Cjayan/PathMind?label=Download&color=green)](https://github.com/Cjayan/PathMind/releases/latest)
+
+> **Windows 用户可直接下载安装包，内嵌 Python 环境，开箱即用，无需任何配置：**
+> **[>>> 下载 PathMind 最新版安装包 <<<](https://github.com/Cjayan/PathMind/releases/latest)**
 
 ---
 
