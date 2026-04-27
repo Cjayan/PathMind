@@ -51,11 +51,12 @@ PMs, QA engineers, and UX researchers share a common pain point: **scattered rec
 
 ### 2. AI Structured Analysis / AI 结构化分析
 
-每一步保存后自动调用 AI（支持 Vision 模型），生成**结构化的专业分析**：
+调用 AI Vision 模型对每一步截图 + 描述进行**结构化专业分析**（需先在 **设置** 中配置 AI API）：
 
-- **单步 AI 评论** — 基于截图 + 描述，自动生成交互分析、体验评价、改进建议
+- **悬浮窗自动生成** — 悬浮窗录制模式下，每步保存后自动在后台调用 AI 生成评论，不阻塞录制流程
+- **Web 端手动生成** — 在 Web 页面中可对单个步骤手动触发 AI 评论生成
 - **流程 AI 总结** — 录制完成后一键生成整体流程分析报告，涵盖全局体验评估
-- **后台异步生成** — 保存即触发，失败自动重试（指数退避，最多 3 次），不阻塞录制流程
+- **后台异步 & 重试** — 失败自动重试（指数退避，最多 3 次）
 - **结构化输出** — AI 结果按固定字段存储（交互描述、评分、改进建议等），便于检索和聚合
 
 ### 3. RAG-Ready Knowledge Base / RAG 就绪知识库
@@ -104,21 +105,27 @@ PMs, QA engineers, and UX researchers share a common pain point: **scattered rec
 
 1. 从 [Releases](../../releases) 下载最新的 `PathMind_Setup_vX.X.X.exe`
 2. 运行安装程序，按提示完成安装
-3. 桌面快捷方式启动，自动打开浏览器访问 http://127.0.0.1:5000
+3. 桌面快捷方式启动 → 自动打开浏览器 + 系统托盘图标常驻
 4. 在**设置**页面配置 AI API（base_url, api_key, model）和录制热键
 5. 首次打开会弹出新手指南，按指引操作即可快速上手
 
 ### Option 2: Run from Source / 源码运行
 
 ```bash
-# Prerequisites: Python 3.10+, pip
+# Prerequisites: Python 3.10+, pip, PyQt6（悬浮窗/托盘必需）
 git clone https://github.com/Cjayan/PathMind.git
 cd PathMind
 pip install -r requirements.txt
-python run.py
 ```
 
-Windows 用户也可双击 `启动服务.bat` 启动。启动后访问 http://127.0.0.1:5000
+**启动方式（二选一）：**
+
+| 方式 | 命令 | 说明 |
+|---|---|---|
+| **完整模式（推荐）** | 双击 `启动服务.bat` 或 `pythonw installer/launcher.pyw` | Web 服务 + 系统托盘 + 悬浮窗录制，支持全部功能 |
+| **纯 Web 模式** | `python run.py` | 仅启动 Web 服务，无系统托盘和悬浮窗，适合仅需 Web 界面的场景 |
+
+> **注意：** 悬浮窗录制、自动录制等核心功能依赖系统托盘，请使用**完整模式**启动。纯 Web 模式下这些功能不可用。
 
 ---
 
@@ -127,12 +134,12 @@ Windows 用户也可双击 `启动服务.bat` 启动。启动后访问 http://12
 ### Standard Workflow / 标准流程
 
 ```
-创建产品 → 新建流程 → 录制步骤（截图+描述+评分）→ AI 自动分析 → 完成录制 → 导出知识库
+创建产品 → 新建流程 → 录制步骤（截图+描述+评分）→ AI 分析（悬浮窗自动/Web 手动）→ 完成录制 → 导出知识库
 ```
 
 1. **创建产品** — 首页点击"新建产品"，对应你要分析的目标应用
 2. **新建流程** — 进入产品页，为具体的使用路径创建流程（如"用户注册流程"）
-3. **录制步骤** — 逐步上传截图、填写描述和评分，每步保存后 AI 自动在后台生成评论
+3. **录制步骤** — 逐步上传截图、填写描述和评分；可手动触发 AI 生成单步评论（悬浮窗模式下保存后自动生成）
 4. **完成录制** — 点击"完成录制"，可一键生成 AI 流程总结
 5. **导出使用** — 导出到 Obsidian Vault，或通过 API 接入 RAG 系统
 
