@@ -688,3 +688,87 @@ h3 { font-size: 16px; font-weight: 600; }
     display: flex;
     gap: 6px;
 }
+
+/* ---- Beginner's Guide ---- */
+
+.guide-btn {
+    background: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 2px 8px;
+    transition: var(--transition);
+}
+
+.guide-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.guide-box {
+    max-width: 560px;
+    text-align: left;
+}
+
+.guide-step {
+    border-left: 3px solid var(--color-primary);
+    padding: 8px 12px;
+    margin-bottom: 12px;
+}
+
+.guide-step h4 {
+    color: var(--color-text);
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.guide-step p {
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.guide-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-border);
+}
+
+.guide-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-muted);
+    cursor: pointer;
+}
+
+.guide-checkbox input {
+    cursor: pointer;
+}
+
+/* ---- Language Toggle ---- */
+
+.lang-toggle {
+    background: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 2px 10px;
+    transition: var(--transition);
+}
+
+.lang-toggle:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}

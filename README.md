@@ -44,8 +44,8 @@ PMs, QA engineers, and UX researchers share a common pain point: **scattered rec
 
 逐页面、逐步骤地记录产品使用路径，每一步包含截图 + 文字描述 + 评分。
 
-- **悬浮窗录制** — 置顶悬浮面板，不遮挡工作界面，边操作边记录
-- **自动录制模式** — 监听鼠标操作，自动截图并 OCR 识别操作描述，无需手动输入
+- **悬浮窗录制** — 通过系统托盘打开置顶悬浮面板，可直接选择或新建流程，边操作边记录
+- **自动录制模式** — 配置热键后，通过悬浮窗 REC 按钮或快捷键启动。每次鼠标左键点击自动截图，截图后输入标题或跳过即可继续，不理想的截图可在 Web 中删除
 - **手动录制模式** — Ctrl+V 粘贴截图，输入描述和评分 (1-10)，精细控制每一步
 - **多屏 DPI 适配** — 在不同分辨率屏幕间拖动悬浮窗自动适配
 
@@ -76,6 +76,8 @@ PMs, QA engineers, and UX researchers share a common pain point: **scattered rec
 | **Flow Management** | 拖拽排序、置顶、颜色标记（6 色） | 多维度组织和筛选流程 |
 | **Full-text Search** | 按描述、备注、AI 评论内容搜索 | 快速定位历史记录 |
 | **Data Sync** | ZIP 全量/增量导入导出 | 跨设备迁移，导入前自动备份 |
+| **i18n** | 中英文界面一键切换 | 内置翻译字典，无需配置，离线可用 |
+| **Beginner's Guide** | 新手指南弹窗 | 首次启动自动弹出，导航栏 "?" 可随时打开 |
 | **Cross-platform** | Windows 安装包 / macOS 源码运行 | Windows 内嵌 Python，开箱即用；macOS 暂未经充分测试 |
 
 ---
@@ -103,7 +105,8 @@ PMs, QA engineers, and UX researchers share a common pain point: **scattered rec
 1. 从 [Releases](../../releases) 下载最新的 `PathMind_Setup_vX.X.X.exe`
 2. 运行安装程序，按提示完成安装
 3. 桌面快捷方式启动，自动打开浏览器访问 http://127.0.0.1:5000
-4. 在**设置**页面配置 AI API（base_url, api_key, model）
+4. 在**设置**页面配置 AI API（base_url, api_key, model）和录制热键
+5. 首次打开会弹出新手指南，按指引操作即可快速上手
 
 ### Option 2: Run from Source / 源码运行
 
@@ -135,10 +138,13 @@ Windows 用户也可双击 `启动服务.bat` 启动。启动后访问 http://12
 
 ### Floating Window / 悬浮窗快捷录制
 
-1. 在流程录制页点击 **"启动悬浮窗"**
-2. 悬浮窗常驻桌面顶层，不影响正常操作
+1. 通过 **系统托盘图标** 打开桌面悬浮窗（启动应用后托盘区会出现 PathMind 图标）
+2. 在悬浮窗中 **选择产品和流程**（也可以直接新建流程）
 3. **手动录制：** Ctrl+V 粘贴截图 → 输入描述 → 保存
-4. **自动录制：** 点击"开始自动录制"→ 正常操作目标应用 → 工具自动捕获截图和描述
+4. **自动录制：** 需先在 [设置] 中配置开始/停止录制热键，然后通过悬浮窗 REC 按钮或快捷键启动
+   - 录制期间 **每次鼠标左键点击** 都会触发截图（点击空白处也会截图）
+   - 每次截图后弹出标题输入框，**输入步骤标题或跳过** 后才能继续下一次截图
+   - 不理想的截图可以稍后在 Web 页面中删除
 5. 录制完成后在 Web 界面查看完整的 AI 分析结果
 
 ### Data Migration / 跨设备迁移
@@ -160,7 +166,9 @@ Windows 用户也可双击 `启动服务.bat` 启动。启动后访问 http://12
 | `ai.temperature` | Generation temperature | `0.7` |
 | `obsidian.vault_path` | Obsidian Vault path / 知识库导出路径 | (empty) |
 | `server.port` | Server port | `5000` |
-| `recording.snipaste_path` | Snipaste executable path | (empty) |
+| `recording.hotkey_start` | Start recording hotkey / 开始录制热键 | (empty) |
+| `recording.hotkey_stop` | Stop recording hotkey / 停止录制热键 | (empty) |
+| `recording.snipaste_path` | Snipaste executable path (Windows only) | (empty) |
 
 ---
 
@@ -200,6 +208,7 @@ Windows 用户也可双击 `启动服务.bat` 启动。启动后访问 http://12
 │   ├── platform/                # OS-specific code (Windows/macOS)
 │   ├── templates/               # Jinja2 HTML templates
 │   └── static/                  # Frontend assets (JS, CSS)
+│       └── i18n/                # Translation dictionaries / 翻译字典
 ├── installer/                   # Installer build scripts / 安装包构建
 └── data/                        # Runtime data (auto-generated)
     ├── app.db                   # SQLite database

@@ -28,6 +28,9 @@ class ApiClient:
             url += f'?product_id={product_id}'
         return self._get(url)
 
+    def create_flow(self, product_id, name):
+        return self._post_json('/api/flows/', {'name': name, 'product_id': product_id})
+
     def list_steps(self, flow_id):
         return self._get(f'/api/steps/?flow_id={flow_id}')
 

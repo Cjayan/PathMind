@@ -20,8 +20,8 @@
         {% endif %}
     </div>
     <div class="flex gap-8">
-        <button class="btn btn-secondary" onclick="exportProduct({{ product.id }})">导出全部到 Obsidian</button>
-        <button class="btn btn-primary" onclick="showCreateFlowModal()">+ 新建流程</button>
+        <button class="btn btn-secondary" onclick="exportProduct({{ product.id }})" data-i18n="导出全部到 Obsidian">导出全部到 Obsidian</button>
+        <button class="btn btn-primary" onclick="showCreateFlowModal()" data-i18n="+ 新建流程">+ 新建流程</button>
     </div>
 </div>
 
@@ -30,17 +30,17 @@
 </div>
 
 <div id="empty-state" class="empty-state" style="display: none;">
-    <h3>还没有流程记录</h3>
-    <p>点击"新建流程"开始记录操作步骤</p>
+    <h3 data-i18n="还没有流程记录">还没有流程记录</h3>
+    <p data-i18n="点击"新建流程"开始记录操作步骤">点击"新建流程"开始记录操作步骤</p>
 </div>
 
 <!-- Create Flow Modal -->
 <div class="modal-overlay" id="create-flow-modal">
     <div class="modal">
-        <h2>新建流程</h2>
+        <h2 data-i18n="新建流程">新建流程</h2>
         <div class="form-group">
-            <label class="form-label">流程名称 *</label>
-            <input type="text" class="form-input" id="flow-name" placeholder="例如: 注册流程, 购买流程, 搜索功能..." autofocus>
+            <label class="form-label" data-i18n="流程名称 *">流程名称 *</label>
+            <input type="text" class="form-input" id="flow-name" placeholder="例如: 注册流程, 购买流程, 搜索功能..." data-i18n-placeholder="例如: 注册流程, 购买流程, 搜索功能..." autofocus>
         </div>
         <div class="modal-actions">
             <button class="btn btn-secondary" onclick="hideCreateFlowModal()">取消</button>

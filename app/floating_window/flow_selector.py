@@ -3,7 +3,7 @@ flow_selector.py - Dialog for selecting a product and flow to record steps into.
 """
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
-    QPushButton, QMessageBox,
+    QPushButton, QMessageBox, QLineEdit,
 )
 from PyQt6.QtCore import Qt
 
@@ -35,6 +35,17 @@ class FlowSelectorDialog(QDialog):
         self.flow_combo = QComboBox()
         layout.addWidget(self.flow_combo)
 
+        # New flow creation row
+        new_flow_row = QHBoxLayout()
+        self.new_flow_input = QLineEdit()
+        self.new_flow_input.setPlaceholderText('输入新流程名称...')
+        self.new_flow_input.returnPressed.connect(self._on_create_flow)
+        new_flow_row.addWidget(self.new_flow_input)
+        self.create_flow_btn = QPushButton('新建')
+        self.create_flow_btn.clicked.connect(self._on_create_flow)
+        new_flow_row.addWidget(self.create_flow_btn)
+        layout.addLayout(new_flow_row)
+
         # Buttons
         btn_layout = QHBoxLayout()
         self.ok_btn = QPushButton('确定')
@@ -63,6 +74,7 @@ class FlowSelectorDialog(QDialog):
     def _on_product_changed(self, index):
         product_id = self.product_combo.currentData()
         self.flow_combo.clear()
+        self.create_flow_btn.setEnabled(product_id is not None)
         if product_id is None:
             return
         try:
@@ -76,6 +88,44 @@ class FlowSelectorDialog(QDialog):
                 self.flow_combo.addItem(label, f['id'])
         except Exception as e:
             QMessageBox.warning(self, '加载失败', f'无法加载流程列表:\n{e}')
+
+    def _on_create_flow(self):
+        product_id = self.product_combo.currentData()
+        if product_id is None:
+            QMessageBox.information(self, '提示', '请先选择一个产品')
+            return
+        name = self.new_flow_input.text().strip()
+        if not name:
+            QMessageBox.information(self, '提示', '请输入流程名称')
+            return
+        # Check for duplicate name in current flow list
+        for i in range(self.flow_combo.count()):
+            existing_text = self.flow_combo.itemText(i)
+            # Flow items are formatted as "name [status]"
+            existing_name = existing_text.rsplit(' [', 1)[0] if ' [' in existing_text else existing_text
+            if existing_name == name:
+                QMessageBox.warning(self, '重复', f'该产品下已存在名为「{name}」的流程')
+                return
+        try:
+            flow = self.api.create_flow(product_id, name)
+            self.new_flow_input.clear()
+            # Refresh flow list and select the new one
+            self._on_product_changed(self.product_combo.currentIndex())
+            new_flow_id = flow.get('id')
+            for i in range(self.flow_combo.count()):
+                if self.flow_combo.itemData(i) == new_flow_id:
+                    self.flow_combo.setCurrentIndex(i)
+                    break
+            # Auto-confirm selection
+            self.selected_flow = {
+                'id': new_flow_id,
+                'name': flow.get('name', name),
+                'product_id': product_id,
+                'product_name': self.product_combo.currentText(),
+            }
+            self.accept()
+        except Exception as e:
+            QMessageBox.warning(self, '创建失败', f'无法创建流程:\n{e}')
 
     def _on_ok(self):
         flow_id = self.flow_combo.currentData()

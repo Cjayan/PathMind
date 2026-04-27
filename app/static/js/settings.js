@@ -15,7 +15,6 @@ function fillForm(config) {
     const obs = config.obsidian || {};
     const ai = config.ai || {};
     const rec = config.recording || {};
-
     document.getElementById('vault-path').value = obs.vault_path || '';
     document.getElementById('products-folder').value = obs.products_folder || 'Products';
     document.getElementById('ai-base-url').value = ai.base_url || '';

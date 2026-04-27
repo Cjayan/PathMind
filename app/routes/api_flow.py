@@ -42,9 +42,14 @@ def create_flow():
     if not product:
         return jsonify({'error': '产品不存在'}), 404
 
+    name = data['name'].strip()
+    existing = Flow.query.filter_by(product_id=data['product_id'], name=name).first()
+    if existing:
+        return jsonify({'error': f'该产品下已存在名为「{name}」的流程'}), 409
+
     flow = Flow(
         product_id=data['product_id'],
-        name=data['name'].strip(),
+        name=name,
         status='recording'
     )
     db.session.add(flow)

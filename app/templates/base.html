@@ -16,20 +16,22 @@
         <div class="nav-center">
             <div class="search-wrapper">
                 <input type="text" class="search-input" id="global-search"
-                       placeholder="搜索描述、备注、解决方案..." autocomplete="off">
+                       placeholder="搜索描述、备注、解决方案..." data-i18n-placeholder="搜索描述、备注、解决方案..." autocomplete="off">
                 <select class="search-field-filter" id="search-field">
-                    <option value="all">全部</option>
-                    <option value="description">描述</option>
-                    <option value="notes">备注</option>
-                    <option value="solution">解决方案</option>
+                    <option value="all" data-i18n="全部">全部</option>
+                    <option value="description" data-i18n="描述">描述</option>
+                    <option value="notes" data-i18n="备注">备注</option>
+                    <option value="solution" data-i18n="解决方案">解决方案</option>
                 </select>
                 <div class="search-dropdown" id="search-dropdown"></div>
             </div>
         </div>
         <div class="nav-right">
-            <a href="/" class="nav-link">首页</a>
-            <a href="/flows" class="nav-link">全部流程</a>
-            <a href="/settings" class="nav-link">设置</a>
+            <a href="/" class="nav-link" data-i18n="首页">首页</a>
+            <a href="/flows" class="nav-link" data-i18n="全部流程">全部流程</a>
+            <a href="/settings" class="nav-link" data-i18n="设置">设置</a>
+            <button class="nav-link guide-btn" onclick="showBeginnersGuide()" title="新手指南">?</button>
+            <button class="nav-link lang-toggle" id="lang-toggle" onclick="toggleLanguage()" title="切换语言">中</button>
         </div>
     </nav>
 

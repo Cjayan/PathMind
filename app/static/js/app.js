@@ -228,4 +228,149 @@ function escapeHtmlSafe(text) {
     return div.innerHTML;
 }
 
-document.addEventListener('DOMContentLoaded', initGlobalSearch);
+document.addEventListener('DOMContentLoaded', () => {
+    initGlobalSearch();
+    initLanguage();
+
+    // Show beginner's guide on first visit of this session
+    try {
+        if (!localStorage.getItem('pathmind_guide_dismissed')
+            && !sessionStorage.getItem('pathmind_guide_shown')) {
+            sessionStorage.setItem('pathmind_guide_shown', 'true');
+            showBeginnersGuide();
+        }
+    } catch (e) { /* storage unavailable */ }
+});
+
+/* ---- Beginner's Guide ---- */
+
+function showBeginnersGuide() {
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay active';
+    overlay.innerHTML = `
+        <div class="confirm-box guide-box">
+            <h3 style="margin-bottom: 16px; font-size: 18px;" data-i18n-guide="guide_title">Welcome to PathMind / 欢迎使用路径智慧库</h3>
+            <div class="guide-step">
+                <h4 data-i18n-guide="guide_s1_title">1. 使用流程</h4>
+                <p data-i18n-guide="guide_s1_body">创建产品 → 新建流程 → 录制步骤（截图+描述+评分） → AI 自动分析 → 导出到 Obsidian 知识库</p>
+            </div>
+            <div class="guide-step">
+                <h4 data-i18n-guide="guide_s2_title">2. 悬浮窗录制</h4>
+                <p data-i18n-guide="guide_s2_body">通过 <strong>系统托盘图标</strong> 打开桌面悬浮窗。在悬浮窗中选择产品和流程后，可使用 Ctrl+V 粘贴截图快速录制，也可以使用自动录制模式。</p>
+            </div>
+            <div class="guide-step">
+                <h4 data-i18n-guide="guide_s3_title">3. 自动录制截图</h4>
+                <p data-i18n-guide="guide_s3_body">在 <a href="/settings" style="color: var(--color-primary);">设置</a> 中配置 <strong>开始/停止录制热键</strong>，然后通过悬浮窗 REC 按钮或快捷键开始自动录制。录制期间 <strong>每次鼠标左键点击</strong> 都会触发截图（点击空白处也会截图）。每次截图后需要 <strong>输入步骤标题或跳过</strong> 才能继续下一次截图。如果截图不理想，可以稍后在 Web 页面中删除。</p>
+            </div>
+            <div class="guide-step">
+                <h4 data-i18n-guide="guide_s4_title">4. AI 智能分析</h4>
+                <p data-i18n-guide="guide_s4_body">在 <a href="/settings" style="color: var(--color-primary);">设置</a> 页面配置 <strong>AI API</strong>（支持 OpenAI 兼容接口），保存步骤后自动生成交互分析、体验评价和改进建议。</p>
+            </div>
+            <div class="guide-footer">
+                <label class="guide-checkbox">
+                    <input type="checkbox" id="guide-dismiss-check"> <span data-i18n-guide="guide_dismiss">不再自动显示</span>
+                </label>
+                <button class="btn btn-primary" id="guide-close-btn" data-i18n-guide="guide_close">我知道了</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    // Apply translations if in English mode
+    if (currentLang === 'en' && _i18nDict) {
+        overlay.querySelectorAll('[data-i18n-guide]').forEach(el => {
+            const key = el.getAttribute('data-i18n-guide');
+            if (_i18nDict[key]) el.innerHTML = _i18nDict[key];
+        });
+    }
+
+    overlay.querySelector('#guide-close-btn').onclick = () => {
+        try {
+            if (overlay.querySelector('#guide-dismiss-check').checked) {
+                localStorage.setItem('pathmind_guide_dismissed', 'true');
+            }
+        } catch (e) { /* localStorage unavailable */ }
+        overlay.remove();
+    };
+    overlay.onclick = (e) => {
+        if (e.target === overlay) {
+            overlay.remove();
+        }
+    };
+}
+
+/* ---- Language Switching (i18n) ---- */
+
+let currentLang = 'zh';
+let _i18nDict = null;       // loaded from static JSON
+let _i18nPlaceholders = null;
+
+async function _loadI18nDict() {
+    if (_i18nDict) return;
+    try {
+        const resp = await fetch('/static/i18n/en.json');
+        const data = await resp.json();
+        _i18nPlaceholders = data._placeholders || {};
+        delete data._placeholders;
+        _i18nDict = data;
+    } catch (e) {
+        _i18nDict = {};
+        _i18nPlaceholders = {};
+    }
+}
+
+async function initLanguage() {
+    try {
+        currentLang = localStorage.getItem('pathmind_lang') || 'zh';
+    } catch (e) {}
+
+    const btn = document.getElementById('lang-toggle');
+    if (btn) btn.textContent = currentLang === 'zh' ? '中' : 'EN';
+
+    if (currentLang === 'en') {
+        await _loadI18nDict();
+        applyTranslations();
+    }
+}
+
+async function toggleLanguage() {
+    currentLang = currentLang === 'zh' ? 'en' : 'zh';
+    try {
+        localStorage.setItem('pathmind_lang', currentLang);
+    } catch (e) {}
+
+    const btn = document.getElementById('lang-toggle');
+    if (btn) btn.textContent = currentLang === 'zh' ? '中' : 'EN';
+
+    if (currentLang === 'en') {
+        await _loadI18nDict();
+        applyTranslations();
+    } else {
+        restoreOriginalTexts();
+    }
+}
+
+function applyTranslations() {
+    if (!_i18nDict) return;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (_i18nDict[key]) {
+            el.textContent = _i18nDict[key];
+        }
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (_i18nPlaceholders[key]) {
+            el.placeholder = _i18nPlaceholders[key];
+        }
+    });
+}
+
+function restoreOriginalTexts() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        el.textContent = el.getAttribute('data-i18n');
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        el.placeholder = el.getAttribute('data-i18n-placeholder');
+    });
+}

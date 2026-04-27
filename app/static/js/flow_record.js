@@ -782,7 +782,7 @@ function showFloatingWindowTip() {
 使用方法：
 1. 点击系统托盘图标打开悬浮窗
 2. 在悬浮窗中选择当前流程
-3. 点击 REC 按钮开始自动录制</p>
+3. 点击 REC 按钮或按快捷键开始自动录制</p>
             <div id="floating-dep-result" style="margin-top:12px;"></div>
             <div class="flex gap-8" style="justify-content: center; margin-top: 16px;">
                 <button class="btn btn-secondary" id="floating-check-btn" onclick="checkFloatingDeps()">检查依赖</button>

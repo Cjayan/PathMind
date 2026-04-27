@@ -4,30 +4,30 @@
 
 {% block content %}
 <div class="page-header">
-    <h1>设置</h1>
+    <h1 data-i18n="设置">设置</h1>
 </div>
 
 <div class="card mb-16">
-    <h2 class="mb-16">Obsidian 知识库设置</h2>
+    <h2 class="mb-16" data-i18n="Obsidian 知识库设置">Obsidian 知识库设置</h2>
 
     <div class="form-group">
-        <label class="form-label">Vault 路径</label>
+        <label class="form-label" data-i18n="Vault 路径">Vault 路径</label>
         <div class="flex gap-8">
-            <input type="text" class="form-input" id="vault-path" placeholder="例如: D:\MyObsidianVault">
-            <button class="btn btn-secondary" onclick="validateVault()" style="white-space: nowrap;">验证路径</button>
+            <input type="text" class="form-input" id="vault-path" placeholder="例如: D:\MyObsidianVault" data-i18n-placeholder="例如: D:\MyObsidianVault">
+            <button class="btn btn-secondary" onclick="validateVault()" style="white-space: nowrap;" data-i18n="验证路径">验证路径</button>
         </div>
         <span class="text-small text-muted mt-8" id="vault-status" style="display: block; margin-top: 4px;"></span>
     </div>
 
     <div class="form-group">
-        <label class="form-label">产品文件夹名称</label>
+        <label class="form-label" data-i18n="产品文件夹名称">产品文件夹名称</label>
         <input type="text" class="form-input" id="products-folder" placeholder="Products" value="Products">
-        <span class="text-small text-muted">在 Vault 根目录下的文件夹名称</span>
+        <span class="text-small text-muted" data-i18n="在 Vault 根目录下的文件夹名称">在 Vault 根目录下的文件夹名称</span>
     </div>
 </div>
 
 <div class="card mb-16">
-    <h2 class="mb-16">AI 设置</h2>
+    <h2 class="mb-16" data-i18n="AI 设置">AI 设置</h2>
 
     <div class="form-group">
         <label class="form-label">API Base URL</label>
@@ -38,14 +38,14 @@
         <label class="form-label">API Key</label>
         <div class="flex gap-8">
             <input type="password" class="form-input" id="ai-api-key" placeholder="sk-...">
-            <button class="btn btn-secondary" onclick="toggleApiKeyVisibility()" style="white-space: nowrap;" id="btn-toggle-key">显示</button>
+            <button class="btn btn-secondary" onclick="toggleApiKeyVisibility()" style="white-space: nowrap;" id="btn-toggle-key" data-i18n="显示">显示</button>
         </div>
     </div>
 
     <div class="form-group">
-        <label class="form-label">模型</label>
+        <label class="form-label" data-i18n="模型">模型</label>
         <input type="text" class="form-input" id="ai-model" placeholder="gpt-4o">
-        <span class="text-small text-muted">需要支持 Vision（图片分析）能力的模型</span>
+        <span class="text-small text-muted" data-i18n="需要支持 Vision（图片分析）能力的模型">需要支持 Vision（图片分析）能力的模型</span>
     </div>
 
     <div class="form-group">
@@ -54,25 +54,25 @@
     </div>
 
     <div style="margin-top: 12px;">
-        <button class="btn btn-secondary" onclick="testAiConnection()">测试 AI 连接</button>
+        <button class="btn btn-secondary" onclick="testAiConnection()" data-i18n="测试 AI 连接">测试 AI 连接</button>
         <span id="ai-test-result" class="text-small" style="margin-left: 12px;"></span>
     </div>
 </div>
 
 <div class="card mb-16">
-    <h2 class="mb-16">自动录制设置</h2>
-    <p class="text-small text-muted mb-16">配置悬浮窗自动录制功能的全局快捷键和截图工具。两个快捷键都配置后才能启用自动录制。</p>
+    <h2 class="mb-16" data-i18n="自动录制设置">自动录制设置</h2>
+    <p class="text-small text-muted mb-16" data-i18n="配置悬浮窗自动录制功能的全局快捷键和截图工具。两个快捷键都配置后才能启用自动录制。">配置悬浮窗自动录制功能的全局快捷键和截图工具。两个快捷键都配置后才能启用自动录制。</p>
 
     <div class="form-group">
-        <label class="form-label">开始录制热键</label>
-        <input type="text" class="form-input" id="recording-hotkey-start" placeholder="例如: f9, ctrl+shift+r">
-        <span class="text-small text-muted">留空表示禁用，支持格式: f9, ctrl+shift+r, alt+f1 等</span>
+        <label class="form-label" data-i18n="开始录制热键">开始录制热键</label>
+        <input type="text" class="form-input" id="recording-hotkey-start" placeholder="例如: f9, ctrl+shift+r" data-i18n-placeholder="例如: f9, ctrl+shift+r">
+        <span class="text-small text-muted" data-i18n="留空表示禁用，支持格式: f9, ctrl+shift+r, alt+f1 等">留空表示禁用，支持格式: f9, ctrl+shift+r, alt+f1 等</span>
     </div>
 
     <div class="form-group">
-        <label class="form-label">停止录制热键</label>
-        <input type="text" class="form-input" id="recording-hotkey-stop" placeholder="例如: f10, ctrl+shift+s">
-        <span class="text-small text-muted">留空表示禁用，建议与开始热键不同</span>
+        <label class="form-label" data-i18n="停止录制热键">停止录制热键</label>
+        <input type="text" class="form-input" id="recording-hotkey-stop" placeholder="例如: f10, ctrl+shift+s" data-i18n-placeholder="例如: f10, ctrl+shift+s">
+        <span class="text-small text-muted" data-i18n="留空表示禁用，建议与开始热键不同">留空表示禁用，建议与开始热键不同</span>
     </div>
 
     {% if platform == 'win32' %}
@@ -94,36 +94,36 @@
 </div>
 
 <div class="flex gap-8" style="margin-top: 24px;">
-    <button class="btn btn-primary btn-lg" onclick="saveSettings()">保存设置</button>
+    <button class="btn btn-primary btn-lg" onclick="saveSettings()" data-i18n="保存设置">保存设置</button>
 </div>
 
 <!-- Data Management Section -->
 <div style="margin-top: 40px;">
     <div class="page-header">
-        <h1>数据管理</h1>
+        <h1 data-i18n="数据管理">数据管理</h1>
     </div>
 
     <div class="card mb-16">
-        <h2 class="mb-16">数据导出</h2>
-        <p class="text-secondary text-small mb-16">导出为 ZIP 文件（包含 JSON 数据 + 图片），可在另一台电脑导入。</p>
+        <h2 class="mb-16" data-i18n="数据导出">数据导出</h2>
+        <p class="text-secondary text-small mb-16" data-i18n="导出为 ZIP 文件（包含 JSON 数据 + 图片），可在另一台电脑导入。">导出为 ZIP 文件（包含 JSON 数据 + 图片），可在另一台电脑导入。</p>
         <div class="flex gap-8">
-            <button class="btn btn-primary" onclick="exportFull()">全量导出</button>
-            <button class="btn btn-secondary" onclick="exportIncremental()">增量导出</button>
+            <button class="btn btn-primary" onclick="exportFull()" data-i18n="全量导出">全量导出</button>
+            <button class="btn btn-secondary" onclick="exportIncremental()" data-i18n="增量导出">增量导出</button>
         </div>
     </div>
 
     <div class="card mb-16">
-        <h2 class="mb-16">数据导入</h2>
-        <p class="text-secondary text-small mb-16">上传从其他实例导出的 ZIP 文件，智能识别新增和更新的数据。</p>
+        <h2 class="mb-16" data-i18n="数据导入">数据导入</h2>
+        <p class="text-secondary text-small mb-16" data-i18n="上传从其他实例导出的 ZIP 文件，智能识别新增和更新的数据。">上传从其他实例导出的 ZIP 文件，智能识别新增和更新的数据。</p>
         <input type="file" id="import-file-input" accept=".zip" style="display: none;" onchange="onImportFileSelected(this)">
-        <button class="btn btn-primary" onclick="triggerImportUpload()">选择 ZIP 文件导入</button>
+        <button class="btn btn-primary" onclick="triggerImportUpload()" data-i18n="选择 ZIP 文件导入">选择 ZIP 文件导入</button>
         <div id="import-preview" class="import-preview-box" style="display: none;"></div>
     </div>
 
     <div class="card mb-16">
-        <h2 class="mb-16">备份管理</h2>
-        <p class="text-secondary text-small mb-16">自动保留最近 3 天的备份。导入操作前会自动创建备份。</p>
-        <button class="btn btn-secondary mb-16" onclick="createManualBackup()">手动创建备份</button>
+        <h2 class="mb-16" data-i18n="备份管理">备份管理</h2>
+        <p class="text-secondary text-small mb-16" data-i18n="自动保留最近 3 天的备份。导入操作前会自动创建备份。">自动保留最近 3 天的备份。导入操作前会自动创建备份。</p>
+        <button class="btn btn-secondary mb-16" onclick="createManualBackup()" data-i18n="手动创建备份">手动创建备份</button>
         <div id="backup-list"></div>
     </div>
 </div>
