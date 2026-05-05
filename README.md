@@ -92,10 +92,11 @@ PMs, QA engineers, and UX researchers share a common pain point: **scattered rec
 > - **Optional / 可选：** [Snipaste](https://www.snipaste.com/) — 悬浮窗模式下增强截图体验（自动调用 Snipaste 截图），非必需。Optional but recommended for enhanced screenshot capture in floating window mode.
 >
 > **AI API Compatibility / AI 接口兼容性：**
-> - 当前 Prompt 和响应解析**针对 LongCat (龙猫) 系列模型优化**（如 `LongCat-Flash-Omni`）
-> - 使用其他 OpenAI 兼容 API（GPT-4o、Claude 等）时，**可能需要微调 Prompt 或解析逻辑**
-> - 详见 `app/services/ai_service.py`
-> - Currently optimized for **LongCat model family**. Other OpenAI-compatible APIs may require prompt/parsing adjustments.
+> - **支持所有 OpenAI 兼容接口** — 包括 OpenAI (GPT-4o)、DeepSeek、Moonshot (Kimi)、智谱 GLM、通义千问、百川等，只需在设置中填写对应的 `base_url`、`api_key`、`model` 即可
+> - **Vision 模型推荐** — AI 截图分析功能需要支持图片输入的模型（如 GPT-4o、GLM-4V、Qwen-VL-Max 等），纯文本模型仅可使用流程总结功能
+> - **Omni 模型特殊处理** — 部分模型（如 LongCat-Flash-Omni）的消息格式和图片传输格式与标准 OpenAI 不同，代码中已做适配（通过模型名自动识别）。如你使用的 Omni 类模型调用异常，请参考 `app/services/ai_service.py` 中的 `_is_omni_model()` 逻辑进行调整
+> - **配置方式** — 在 Web 端**设置**页填写三项即可使用：API 地址（base_url）、密钥（api_key）、模型名（model）
+> - Supports all **OpenAI-compatible APIs** (OpenAI, DeepSeek, Moonshot, Zhipu GLM, Qwen, etc.). Vision-capable models recommended for screenshot analysis. Omni-format models have special handling — see `ai_service.py` if adjustments needed.
 
 ---
 
