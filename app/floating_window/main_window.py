@@ -458,6 +458,10 @@ class FloatingWindow(QWidget):
     # ── Flow Selection ──
 
     def _select_flow(self):
+        # If auto-recording is active, stop it before switching flows
+        if self._auto_recorder.is_recording:
+            self._auto_recorder.stop_recording()
+
         dialog = FlowSelectorDialog(self.api, self)
         if dialog.exec() == FlowSelectorDialog.DialogCode.Accepted:
             flow = dialog.get_selected_flow()

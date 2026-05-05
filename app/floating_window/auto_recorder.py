@@ -133,15 +133,12 @@ class AutoRecordController(QObject):
         """Handle start hotkey press."""
         if self._is_recording:
             return
-        if not self._flow:
-            # Use whatever flow is selected in floating window
-            flow = self._window.current_flow
-            if not flow:
-                self.error_occurred.emit('请先选择录制流程后再按开始热键')
-                return
-            self.start_recording(flow)
-        else:
-            self.start_recording(self._flow)
+        # Always use the flow currently selected in floating window
+        flow = self._window.current_flow
+        if not flow:
+            self.error_occurred.emit('请先选择录制流程后再按开始热键')
+            return
+        self.start_recording(flow)
 
     def _on_stop_hotkey(self):
         """Handle stop hotkey press."""
